@@ -585,7 +585,9 @@ table{border-collapse:collapse}
       pill.className = "pill no";
       pill.textContent = "見送り";
       tag.textContent = "この価格は、見送りです";
-      msg.textContent = "上限を " + fmt(-diff) + " 万円オーバーしています。" + fmt(cap) + " 万円まで指値が通らないなら、家賃を下げる武器を失った状態で持つことになります。";
+      var over = -diff;
+      msg.textContent = (over < 0.05 ? "上限をわずかに超えています。" : "上限を " + fmt(over) + " 万円オーバーしています。")
+        + fmt(cap) + " 万円まで指値が通らないなら、家賃を下げる武器を失った状態で持つことになります。";
     }
   }
 
