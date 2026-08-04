@@ -382,8 +382,9 @@ table{border-collapse:collapse}
     <div class="card">
       <div class="row"><label for="reno">リフォーム費の見込み<span class="sub">トイレの洋式化15〜20万を最優先。全部きれいにする必要はありません</span></label>
         <div class="inputwrap"><input type="number" id="reno" step="1" min="0" value="100" inputmode="decimal"><span class="unit">万円</span></div></div>
-      <div class="row"><label for="fee">諸経費<span class="sub">登記・不動産取得税・仲介手数料など。物件価格の1割が目安</span></label>
-        <div class="inputwrap"><input type="number" id="fee" step="1" min="0" value="30" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="row"><label for="feeRate">諸経費<span class="sub">登記・不動産取得税・仲介手数料など。物件価格に対する割合で見込みます。1割が目安</span></label>
+        <div class="inputwrap"><input type="number" id="feeRate" step="0.1" min="0" value="10" inputmode="decimal"><span class="unit">％</span></div></div>
+      <div class="derived"><span class="k">諸経費の見込み額</span><span class="v" id="fee">—<span class="u">万円</span></span></div>
       <div class="derived hi"><span class="k">物件価格の上限</span><span class="v" id="cap">—<span class="u">万円</span></span></div>
     </div>
   </section>
@@ -460,6 +461,8 @@ table{border-collapse:collapse}
   <footer class="credit">
     荒井良太｜関東で日本一強いボロ屋投資家<br>
     自己資金ほぼゼロから3年で100棟以上を購入・関東1都6県 築古戸建て専門<br>
+    ※各項目の表示は小数第1位に四捨五入しています。計算と判定は端数を含めた値で行うため、表示された数字を電卓で追うとわずかにずれることがあります。<br>
+    ※本ツールの利回りは、リフォーム費・諸経費を含めた総投資額に対する利回りです。物件価格だけで計算する一般的な表面利回りより厳しく出ます。<br>
     ※本ツールの数値は目安です。最終的な投資判断はご自身の責任でお願いします。
   </footer>
 </main>
@@ -476,7 +479,7 @@ table{border-collapse:collapse}
 
 <script>
   var $ = function (id) { return document.getElementById(id); };
-  var ids = ["a", "b", "c", "cut", "yield", "reno", "fee", "price"];
+  var ids = ["a", "b", "c", "cut", "yield", "reno", "feeRate", "price"];
 
   function num(id) {
     var v = parseFloat($(id).value);
@@ -501,27 +504,38 @@ table{border-collapse:collapse}
     setVal("market", market);
 
     var cut = num("cut");
-    var rent = (market !== null && cut !== null) ? market - cut : null;
-    if (rent !== null && rent <= 0) rent = null;
+    if (cut === null) cut = 0;
+    var rent = market !== null ? market - cut : null;
+    var cutTooBig = rent !== null && rent <= 0;
+    if (cutTooBig) rent = null;
     setVal("rent", rent);
 
     var annual = rent !== null ? rent * 12 : null;
     setVal("annual", annual);
 
     var y = num("yield");
-    var total = (annual !== null && y !== null && y > 0) ? annual / (y / 100) : null;
+    var yieldBad = y === null || y <= 0;
+    var total = (annual !== null && !yieldBad) ? annual / (y / 100) : null;
     setVal("total", total);
 
     var reno = num("reno") || 0;
-    var fee = num("fee") || 0;
-    var cap = total !== null ? total - reno - fee : null;
+    var feeRate = num("feeRate");
+    if (feeRate === null || feeRate < 0) feeRate = 0;
+
+    // 諸経費は物件価格に比例するため、上限は (総投資額 − リフォーム費) ÷ (1 + 諸経費率) で逆算する
+    var cap = total !== null ? (total - reno) / (1 + feeRate / 100) : null;
+    var fee = (cap !== null && cap > 0) ? cap * feeRate / 100 : null;
+    setVal("fee", fee);
     setVal("cap", cap);
     setVal("stickyCap", cap);
 
-    verdict(cap);
+    verdict(cap, {
+      market: market, cutTooBig: cutTooBig, yieldBad: yieldBad,
+      total: total, reno: reno, feeRate: feeRate
+    });
   }
 
-  function verdict(cap) {
+  function verdict(cap, st) {
     var price = num("price");
     var box = $("verdict"), tag = $("verdictTag"), msg = $("verdictMsg"), pill = $("stickyPill");
 
@@ -529,9 +543,25 @@ table{border-collapse:collapse}
     pill.className = "pill";
 
     if (cap === null) {
-      tag.textContent = "まず家賃相場を入れてください";
-      msg.textContent = "ステップ1の物件A〜Cを埋めると、上限額が出ます。";
+      if (st.market === null) {
+        tag.textContent = "まず家賃相場を入れてください";
+        msg.textContent = "ステップ1の物件A〜Cを埋めると、上限額が出ます。";
+      } else if (st.cutTooBig) {
+        tag.textContent = "下げる額が大きすぎます";
+        msg.textContent = "ステップ2の「相場から下げる額」が家賃相場（" + fmt(st.market) + " 万円）以上になっています。相場より小さい額にしてください。";
+      } else {
+        tag.textContent = "目標利回りを入れてください";
+        msg.textContent = "ステップ3の利回りが空欄か0になっています。0より大きい数字を入れてください。";
+      }
       pill.textContent = "未入力";
+      return;
+    }
+    if (cap <= 0) {
+      box.className = "verdict no";
+      pill.className = "pill no";
+      pill.textContent = "条件を見直し";
+      tag.textContent = "この条件では、物件に出せる額が残りません";
+      msg.textContent = "総投資額の上限 " + fmt(st.total) + " 万円を、リフォーム費 " + fmt(st.reno) + " 万円だけで使い切っています。リフォーム費を絞るか、家賃・目標利回りの前提を見直してください。";
       return;
     }
     if (price === null || price <= 0) {
@@ -547,7 +577,9 @@ table{border-collapse:collapse}
       pill.className = "pill go";
       pill.textContent = "買っていい";
       tag.textContent = "この価格なら、買っていい";
-      msg.textContent = "上限まであと " + fmt(diff) + " 万円の余裕があります。指値でさらに下げられれば、その分だけ家賃を下げる余力が増えます。";
+      msg.textContent = diff < 0.05
+        ? "上限ぴったりです。ここから1万円でも上がると見送りになります。指値で下げられた分だけ、家賃を下げる余力が増えます。"
+        : "上限まであと " + fmt(diff) + " 万円の余裕があります。指値でさらに下げられれば、その分だけ家賃を下げる余力が増えます。";
     } else {
       box.className = "verdict no";
       pill.className = "pill no";
@@ -571,7 +603,7 @@ table{border-collapse:collapse}
 
   $("yield").addEventListener("input", function () {
     Array.prototype.forEach.call(document.querySelectorAll(".preset"), function (b) {
-      b.setAttribute("aria-pressed", b.dataset.y === $("yield").value ? "true" : "false");
+      b.setAttribute("aria-pressed", parseFloat(b.dataset.y) === parseFloat($("yield").value) ? "true" : "false");
     });
   });
 
