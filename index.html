@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="家賃相場から逆算して「この物件にいくらまで出していいか」を出す無料ツール。相場より安く貸しても利回りが残る上限額と、買っていい／見送りの判定が出ます。">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="家賃逆算シート｜ボロリッチ">
+<meta property="og:description" content="その家賃、下げられますか。買う前に「いくらまで出していいか」を10分で出す計算機です。">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#16232F" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101A24" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%2316232F%22/><text y=%22.9em%22 x=%2250%22 text-anchor=%22middle%22 font-size=%2270%22>&#127962;</text></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body,h1,h2,h3,p,table,th,td{margin:0;padding:0}
+button,input{font:inherit;color:inherit}
+img,svg{display:block;max-width:100%}
+table{border-collapse:collapse}
+</style>
+<title>家賃逆算シート｜ボロリッチ</title>
+
+<style>
+  :root {
+    --ground: #F2F4F7;
+    --panel: #FFFFFF;
+    --panel-2: #E9EDF2;
+    --ink: #16232F;
+    --ink-2: #4A5C6E;
+    --ink-3: #7C8EA0;
+    --line: #D3DAE3;
+    --accent: #C97E0A;
+    --accent-soft: #FBEFD7;
+    --good: #1E7A52;
+    --good-soft: #E2F1E9;
+    --bad: #B4402C;
+    --bad-soft: #FAE7E2;
+    --shadow: 0 1px 2px rgba(22,35,47,.06), 0 8px 24px rgba(22,35,47,.06);
+
+    --sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium",
+            "Noto Sans JP", system-ui, sans-serif;
+    --serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #101A24;
+      --panel: #18242F;
+      --panel-2: #22303D;
+      --ink: #E8EDF2;
+      --ink-2: #A8B8C6;
+      --ink-3: #75879A;
+      --line: #2C3A48;
+      --accent: #F5A623;
+      --accent-soft: #2A2113;
+      --good: #4FBF8B;
+      --good-soft: #14281F;
+      --bad: #E8785E;
+      --bad-soft: #2B1A17;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #101A24;
+    --panel: #18242F;
+    --panel-2: #22303D;
+    --ink: #E8EDF2;
+    --ink-2: #A8B8C6;
+    --ink-3: #75879A;
+    --line: #2C3A48;
+    --accent: #F5A623;
+    --accent-soft: #2A2113;
+    --good: #4FBF8B;
+    --good-soft: #14281F;
+    --bad: #E8785E;
+    --bad-soft: #2B1A17;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.28);
+  }
+  :root[data-theme="light"] {
+    --ground: #F2F4F7;
+    --panel: #FFFFFF;
+    --panel-2: #E9EDF2;
+    --ink: #16232F;
+    --ink-2: #4A5C6E;
+    --ink-3: #7C8EA0;
+    --line: #D3DAE3;
+    --accent: #C97E0A;
+    --accent-soft: #FBEFD7;
+    --good: #1E7A52;
+    --good-soft: #E2F1E9;
+    --bad: #B4402C;
+    --bad-soft: #FAE7E2;
+    --shadow: 0 1px 2px rgba(22,35,47,.06), 0 8px 24px rgba(22,35,47,.06);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.7;
+    -webkit-text-size-adjust: 100%;
+    padding-bottom: 108px;
+  }
+
+  .wrap { max-width: 580px; margin: 0 auto; padding: 0 18px; }
+
+  /* ---------- header ---------- */
+  .masthead {
+    background: #16232F;
+    color: #E8EDF2;
+    padding: 40px 0 34px;
+    margin-bottom: 26px;
+    border-bottom: 3px solid var(--accent);
+  }
+  :root[data-theme="dark"] .masthead { background: #0A121A; }
+  .eyebrow {
+    font-size: 11px; letter-spacing: .22em; color: #F5A623;
+    text-transform: none; margin-bottom: 14px;
+  }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 8vw, 38px);
+    font-weight: 600; line-height: 1.32; text-wrap: balance;
+    letter-spacing: .01em;
+  }
+  .masthead p {
+    margin-top: 14px; font-size: 14px; color: #A8B8C6; max-width: 34em;
+  }
+
+  /* ---------- steps ---------- */
+  .step { margin-bottom: 14px; }
+  .step-head {
+    display: flex; align-items: baseline; gap: 11px; margin-bottom: 3px;
+  }
+  .step-num {
+    font-size: 12px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums; letter-spacing: .06em;
+    flex: none; min-width: 1.4em;
+  }
+  .step-head h2 {
+    font-family: var(--serif); font-size: 18px; font-weight: 600;
+    line-height: 1.45; text-wrap: balance;
+  }
+  .step-note {
+    font-size: 12.5px; color: var(--ink-3); margin: 0 0 12px 30px;
+    line-height: 1.6;
+  }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 16px 6px; box-shadow: var(--shadow);
+  }
+
+  .row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  .row label { flex: 1; font-size: 14px; color: var(--ink-2); }
+  .row .sub { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+
+  .inputwrap { display: flex; align-items: baseline; gap: 6px; flex: none; }
+  input[type="number"] {
+    width: 96px; padding: 8px 10px; text-align: right;
+    font-family: var(--sans); font-size: 16px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink); background: var(--ground);
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  input[type="number"]:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  .unit { font-size: 12px; color: var(--ink-3); flex: none; width: 2.4em; }
+
+  /* ---------- derived value ---------- */
+  .derived {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; padding: 13px 15px; border-radius: 8px; margin: 12px 0 2px;
+    background: var(--panel-2);
+  }
+  .derived .k { font-size: 13px; color: var(--ink-2); }
+  .derived .v {
+    font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+  }
+  .derived .v .u { font-size: 12px; font-weight: 600; margin-left: 3px; color: var(--ink-3); }
+  .derived.hi { background: var(--accent-soft); }
+  .derived.hi .v { color: var(--accent); }
+  .derived.ok { background: var(--good-soft); }
+  .derived.ok .v { color: var(--good); }
+
+  /* ---------- yield presets ---------- */
+  .presets { display: grid; gap: 7px; margin: 4px 0 10px; }
+  .preset {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; width: 100%; text-align: left;
+    padding: 11px 13px; border-radius: 8px; cursor: pointer;
+    background: var(--ground); border: 1px solid var(--line);
+    color: var(--ink); font-family: var(--sans); font-size: 13.5px;
+    transition: border-color .12s, background .12s;
+  }
+  .preset:hover { border-color: var(--accent); }
+  .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .preset[aria-pressed="true"] {
+    background: var(--accent-soft); border-color: var(--accent);
+  }
+  .preset b {
+    font-size: 15px; font-variant-numeric: tabular-nums; color: var(--accent);
+    flex: none;
+  }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    margin: 8px 0 4px; padding: 16px; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--line);
+  }
+  .verdict.go { background: var(--good-soft); border-color: transparent; }
+  .verdict.no { background: var(--bad-soft); border-color: transparent; }
+  .verdict .tag {
+    font-family: var(--serif); font-size: 20px; font-weight: 600;
+    line-height: 1.4;
+  }
+  .verdict.go .tag { color: var(--good); }
+  .verdict.no .tag { color: var(--bad); }
+  .verdict p { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+  .verdict.idle .tag { color: var(--ink-3); }
+
+  /* ---------- prose sections ---------- */
+  .section { margin-top: 40px; }
+  .section > h2 {
+    font-family: var(--serif); font-size: 20px; font-weight: 600;
+    margin-bottom: 4px; text-wrap: balance;
+  }
+  .section > .lede { font-size: 13px; color: var(--ink-3); margin-bottom: 16px; }
+
+  .guard { padding: 15px 0; border-top: 1px solid var(--line); }
+  .guard h3 {
+    font-size: 15px; font-weight: 700; margin-bottom: 5px;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  .guard h3 span { color: var(--accent); font-size: 12px; flex: none; }
+  .guard p { font-size: 13.5px; color: var(--ink-2); }
+
+  .checks { display: grid; gap: 2px; }
+  .check {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 11px 12px; border-radius: 8px; cursor: pointer;
+    font-size: 13.5px; color: var(--ink-2);
+    background: var(--panel); border: 1px solid var(--line);
+  }
+  .check:has(input:checked) { color: var(--ink-3); background: var(--panel-2); }
+  .check:has(input:checked) .txt { text-decoration: line-through; }
+  .check input { margin-top: 4px; accent-color: var(--accent); flex: none; }
+  .check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .why {
+    background: var(--panel); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 16px 18px; margin-top: 8px;
+  }
+  .why h3 { font-size: 14px; font-weight: 700; margin-bottom: 7px; }
+  .why p { font-size: 13.5px; color: var(--ink-2); }
+
+  /* ---------- example table ---------- */
+  .tablewrap { overflow-x: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; min-width: 380px; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; color: var(--ink-3); }
+  thead th { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+  tbody td { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .col-good { color: var(--good); }
+  .col-bad { color: var(--bad); }
+  .note { font-size: 11.5px; color: var(--ink-3); margin-top: 10px; line-height: 1.65; }
+
+  /* ---------- CTA ---------- */
+  .cta {
+    margin-top: 40px; background: #16232F; color: #E8EDF2;
+    border-radius: 12px; padding: 26px 22px; text-align: center;
+  }
+  :root[data-theme="dark"] .cta { background: #0A121A; border: 1px solid var(--line); }
+  .cta h2 { font-family: var(--serif); font-size: 18px; font-weight: 600; color: #F5A623; }
+  .cta p { font-size: 13px; color: #A8B8C6; margin-top: 10px; }
+  .cta a {
+    display: inline-block; margin-top: 18px; padding: 13px 30px;
+    background: #F5A623; color: #16232F; font-weight: 700; font-size: 14.5px;
+    border-radius: 999px; text-decoration: none;
+  }
+  .cta a:focus-visible { outline: 2px solid #E8EDF2; outline-offset: 3px; }
+
+  footer.credit {
+    text-align: center; font-size: 11.5px; color: var(--ink-3);
+    margin: 26px 0 10px; line-height: 1.8;
+  }
+
+  /* ---------- sticky bar ---------- */
+  .sticky {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--panel); border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 22px rgba(22,35,47,.10);
+    padding: 11px 0 calc(11px + env(safe-area-inset-bottom));
+  }
+  :root[data-theme="dark"] .sticky { box-shadow: 0 -6px 22px rgba(0,0,0,.4); }
+  .sticky .wrap { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .sticky .k { font-size: 11.5px; color: var(--ink-3); letter-spacing: .04em; }
+  .sticky .v {
+    font-size: 27px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums; letter-spacing: -.02em; line-height: 1.2;
+  }
+  .sticky .v .u { font-size: 13px; margin-left: 3px; color: var(--ink-3); font-weight: 600; }
+  .pill {
+    font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px;
+    background: var(--panel-2); color: var(--ink-3); flex: none; text-align: center;
+  }
+  .pill.go { background: var(--good-soft); color: var(--good); }
+  .pill.no { background: var(--bad-soft); color: var(--bad); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">ボロリッチ 公式ツール</div>
+    <h1>その家賃、<br>下げられますか。</h1>
+    <p>空室が続く原因は、募集の仕方ではなく買った値段にあります。相場より安く貸しても利回りが残る上限額を、買う前に出しておくための計算機です。</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- STEP 1 -->
+  <section class="step">
+    <div class="step-head"><span class="step-num">1</span><h2>エリアの家賃相場を調べる</h2></div>
+    <p class="step-note">賃貸サイトで「同じ市区町村・戸建・同じくらいの広さ」を3件。投資用サイトの想定家賃ではなく、実際に募集中の家賃を見てください。</p>
+    <div class="card">
+      <div class="row"><label for="a">近い条件の物件A</label>
+        <div class="inputwrap"><input type="number" id="a" step="0.1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="row"><label for="b">近い条件の物件B</label>
+        <div class="inputwrap"><input type="number" id="b" step="0.1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="row"><label for="c">近い条件の物件C</label>
+        <div class="inputwrap"><input type="number" id="c" step="0.1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="derived"><span class="k">家賃相場（平均）</span><span class="v" id="market">—<span class="u">万円</span></span></div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step">
+    <div class="step-head"><span class="step-num">2</span><h2>そこから、いくら下げて貸すか決める</h2></div>
+    <p class="step-note">相場より安い部屋は最後まで残りません。ここが空室対策の本体です。事故物件・再建築不可・汲み取りなど条件が重い物件は1.5〜2万円。</p>
+    <div class="card">
+      <div class="row"><label for="cut">相場から下げる額<span class="sub">目安は1万円</span></label>
+        <div class="inputwrap"><input type="number" id="cut" step="0.1" min="0" value="1" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="derived hi"><span class="k">実際に設定する家賃</span><span class="v" id="rent">—<span class="u">万円</span></span></div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step">
+    <div class="step-head"><span class="step-num">3</span><h2>目標利回りを決める</h2></div>
+    <p class="step-note">エリアで基準が変わります。ここを甘くすると、下げた分がそのまま赤字になります。</p>
+    <div class="card">
+      <div class="presets">
+        <button type="button" class="preset" data-y="20" aria-pressed="true">国道16号線の外側<b>20%</b></button>
+        <button type="button" class="preset" data-y="15" aria-pressed="false">国道16号線の内側（一都三県）<b>15%</b></button>
+        <button type="button" class="preset" data-y="10" aria-pressed="false">東京都内<b>10%</b></button>
+      </div>
+      <div class="row"><label for="yield">この物件で狙う表面利回り</label>
+        <div class="inputwrap"><input type="number" id="yield" step="0.1" min="0.1" value="20" inputmode="decimal"><span class="unit">％</span></div></div>
+      <div class="derived"><span class="k">年間の家賃収入</span><span class="v" id="annual">—<span class="u">万円</span></span></div>
+      <div class="derived ok"><span class="k">総投資額の上限</span><span class="v" id="total">—<span class="u">万円</span></span></div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="step">
+    <div class="step-head"><span class="step-num">4</span><h2>物件そのものに出せる額を出す</h2></div>
+    <p class="step-note">総投資額の上限から、リフォームと諸経費を引いた残りが、物件価格に出していい上限です。</p>
+    <div class="card">
+      <div class="row"><label for="reno">リフォーム費の見込み<span class="sub">トイレの洋式化15〜20万を最優先。全部きれいにする必要はありません</span></label>
+        <div class="inputwrap"><input type="number" id="reno" step="1" min="0" value="100" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="row"><label for="fee">諸経費<span class="sub">登記・不動産取得税・仲介手数料など。物件価格の1割が目安</span></label>
+        <div class="inputwrap"><input type="number" id="fee" step="1" min="0" value="30" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="derived hi"><span class="k">物件価格の上限</span><span class="v" id="cap">—<span class="u">万円</span></span></div>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="step">
+    <div class="step-head"><span class="step-num">5</span><h2>いま検討している物件で判定する</h2></div>
+    <p class="step-note">上限を1円でも超えたら見送りです。高く買った瞬間に、値下げという武器を失います。</p>
+    <div class="card">
+      <div class="row"><label for="price">検討中の物件価格</label>
+        <div class="inputwrap"><input type="number" id="price" step="1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <div class="verdict idle" id="verdict">
+        <div class="tag" id="verdictTag">物件価格を入れてください</div>
+        <p id="verdictMsg">相場と物件価格が入ると、買っていいかどうかが出ます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 実例 -->
+  <section class="section">
+    <h2>同じ家賃でも、買った値段で結果が変わります</h2>
+    <p class="lede">埼玉県入間郡で実際に買った物件と、同じ部屋を高く買っていた場合の比較です。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>実際に買った物件</th><th>もし高く買っていたら</th></tr></thead>
+        <tbody>
+          <tr><td>設定家賃</td><td>月 約4.8万円</td><td>月 約4.8万円</td></tr>
+          <tr><td>年間家賃</td><td>約57.5万円</td><td>約57.5万円</td></tr>
+          <tr><td>総投資額</td><td>295万円</td><td>1,000万円</td></tr>
+          <tr><td>表面利回り</td><td class="col-good">19.5%</td><td class="col-bad">5.8%</td></tr>
+          <tr><td>実質利回り</td><td class="col-good">15.6%</td><td>—</td></tr>
+          <tr><td>家賃を下げる余力</td><td class="col-good">ある</td><td class="col-bad">ない</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">※ 月額家賃は、総投資額295万円と表面利回り19.5%からの逆算値です。1,000万円のケースは説明用の仮定で、実在の物件ではありません。</p>
+  </section>
+
+  <!-- 守り -->
+  <section class="section">
+    <h2>相場より安く貸すときの、3つの守り</h2>
+    <p class="lede">安さで選んでもらう代わりに、ここだけは外さないでください。</p>
+    <div class="guard"><h3><span>守り 1</span>電気と水道が生きていること</h3>
+      <p>「汚い」は許容されますが「住めない」は許容されません。ライフラインが止まっている物件は、汚い家ではなく廃墟です。空き家期間5年超は、現地確認か最悪ケースを想定した資金計画を。</p></div>
+    <div class="guard"><h3><span>守り 2</span>契約書の特約に一行入れる</h3>
+      <p>「建物の構造に関わる大規模な変更は禁止」。安く貸すとDIY希望の入居者が集まりますが、壁を抜かれてからでは戻せません。DIY可にするなら、範囲を先に文章で決めておきます。</p></div>
+    <div class="guard"><h3><span>守り 3</span>内見で欠点を先に全部伝える</h3>
+      <p>隠して貸すと必ずもめます。設備が最新でないこと、見た目がきれいでないことを正直に伝えた上で、安さで選んでもらう。これができると、入居後のクレームがほぼ消えます。</p></div>
+    <div class="why">
+      <h3>なぜ「安い家賃」がいちばん強いのか</h3>
+      <p>相場より安い部屋は、最後まで残りません。空室期間が短いということは、実質利回りが落ちないということです。設備の新しさや内装のきれいさは、他の物件と比べられます。でも「安い」は比べられた瞬間に勝ちます。その安さを出せるかどうかは、買った値段で決まっています。</p>
+    </div>
+  </section>
+
+  <!-- チェック -->
+  <section class="section">
+    <h2>買付を入れる前の、最終チェック</h2>
+    <p class="lede">5つ全部にチェックが入ってから、買付を出してください。</p>
+    <div class="checks">
+      <label class="check"><input type="checkbox"><span class="txt">物件価格が、上で出した「物件価格の上限」以内におさまっている</span></label>
+      <label class="check"><input type="checkbox"><span class="txt">相場より下げた家賃で計算している（相場のままで計算していない）</span></label>
+      <label class="check"><input type="checkbox"><span class="txt">リフォーム費に、トイレの洋式化15〜20万円を入れてある</span></label>
+      <label class="check"><input type="checkbox"><span class="txt">電気・水道が公道から引き込まれていることを確認した</span></label>
+      <label class="check"><input type="checkbox"><span class="txt">空き家期間を売主・仲介に確認した（5年超なら現地確認は必須）</span></label>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>3年で100棟以上を買った方法、<br>一冊にまとめました</h2>
+    <p>利回りの計算／6年回収モデル／5年の壁（税金）／8つのリスク管理／リフォームの優先順位／僕の失敗談3つまで、包み隠さず書いています。</p>
+    <a href="https://lin.ee/9CRDlF2" target="_blank" rel="noopener">公式LINEで電子書籍を受け取る</a>
+  </section>
+
+  <footer class="credit">
+    荒井良太｜関東で日本一強いボロ屋投資家<br>
+    自己資金ほぼゼロから3年で100棟以上を購入・関東1都6県 築古戸建て専門<br>
+    ※本ツールの数値は目安です。最終的な投資判断はご自身の責任でお願いします。
+  </footer>
+</main>
+
+<div class="sticky">
+  <div class="wrap">
+    <div>
+      <div class="k">物件価格の上限</div>
+      <div class="v" id="stickyCap">—<span class="u">万円</span></div>
+    </div>
+    <div class="pill" id="stickyPill">未入力</div>
+  </div>
+</div>
+
+<script>
+  var $ = function (id) { return document.getElementById(id); };
+  var ids = ["a", "b", "c", "cut", "yield", "reno", "fee", "price"];
+
+  function num(id) {
+    var v = parseFloat($(id).value);
+    return isFinite(v) ? v : null;
+  }
+
+  function fmt(n) {
+    if (n === null || !isFinite(n)) return null;
+    var r = Math.round(n * 10) / 10;
+    return r.toLocaleString("ja-JP", { maximumFractionDigits: 1 });
+  }
+
+  function setVal(id, n, unit) {
+    var el = $(id);
+    var s = fmt(n);
+    el.innerHTML = (s === null ? "—" : s) + '<span class="u">' + (unit || "万円") + "</span>";
+  }
+
+  function calc() {
+    var rents = ["a", "b", "c"].map(num).filter(function (v) { return v !== null && v > 0; });
+    var market = rents.length ? rents.reduce(function (s, v) { return s + v; }, 0) / rents.length : null;
+    setVal("market", market);
+
+    var cut = num("cut");
+    var rent = (market !== null && cut !== null) ? market - cut : null;
+    if (rent !== null && rent <= 0) rent = null;
+    setVal("rent", rent);
+
+    var annual = rent !== null ? rent * 12 : null;
+    setVal("annual", annual);
+
+    var y = num("yield");
+    var total = (annual !== null && y !== null && y > 0) ? annual / (y / 100) : null;
+    setVal("total", total);
+
+    var reno = num("reno") || 0;
+    var fee = num("fee") || 0;
+    var cap = total !== null ? total - reno - fee : null;
+    setVal("cap", cap);
+    setVal("stickyCap", cap);
+
+    verdict(cap);
+  }
+
+  function verdict(cap) {
+    var price = num("price");
+    var box = $("verdict"), tag = $("verdictTag"), msg = $("verdictMsg"), pill = $("stickyPill");
+
+    box.className = "verdict idle";
+    pill.className = "pill";
+
+    if (cap === null) {
+      tag.textContent = "まず家賃相場を入れてください";
+      msg.textContent = "ステップ1の物件A〜Cを埋めると、上限額が出ます。";
+      pill.textContent = "未入力";
+      return;
+    }
+    if (price === null || price <= 0) {
+      tag.textContent = "検討中の物件価格を入れてください";
+      msg.textContent = "上限は " + fmt(cap) + " 万円です。この金額と比べます。";
+      pill.textContent = "価格待ち";
+      return;
+    }
+
+    var diff = cap - price;
+    if (diff >= 0) {
+      box.className = "verdict go";
+      pill.className = "pill go";
+      pill.textContent = "買っていい";
+      tag.textContent = "この価格なら、買っていい";
+      msg.textContent = "上限まであと " + fmt(diff) + " 万円の余裕があります。指値でさらに下げられれば、その分だけ家賃を下げる余力が増えます。";
+    } else {
+      box.className = "verdict no";
+      pill.className = "pill no";
+      pill.textContent = "見送り";
+      tag.textContent = "この価格は、見送りです";
+      msg.textContent = "上限を " + fmt(-diff) + " 万円オーバーしています。" + fmt(cap) + " 万円まで指値が通らないなら、家賃を下げる武器を失った状態で持つことになります。";
+    }
+  }
+
+  ids.forEach(function (id) { $(id).addEventListener("input", calc); });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".preset"), function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll(".preset"), function (b) {
+        b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+      });
+      $("yield").value = btn.dataset.y;
+      calc();
+    });
+  });
+
+  $("yield").addEventListener("input", function () {
+    Array.prototype.forEach.call(document.querySelectorAll(".preset"), function (b) {
+      b.setAttribute("aria-pressed", b.dataset.y === $("yield").value ? "true" : "false");
+    });
+  });
+
+  calc();
+</script>
+</body>
+</html>
