@@ -274,6 +274,15 @@ table{border-collapse:collapse}
   .col-bad { color: var(--bad); }
   .note { font-size: 11.5px; color: var(--ink-3); margin-top: 10px; line-height: 1.65; }
 
+  /* ---------- unit warning ---------- */
+  .unitwarn {
+    display: none; margin: 10px 0 4px; padding: 10px 13px;
+    border-radius: 8px; font-size: 12.5px; line-height: 1.6;
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .unitwarn.on { display: block; }
+
   /* ---------- CTA ---------- */
   .cta {
     margin-top: 40px; background: #16232F; color: #E8EDF2;
@@ -343,6 +352,7 @@ table{border-collapse:collapse}
         <div class="inputwrap"><input type="number" id="b" step="0.1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
       <div class="row"><label for="c">近い条件の物件C</label>
         <div class="inputwrap"><input type="number" id="c" step="0.1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <p class="unitwarn" id="warnRent"></p>
       <div class="derived"><span class="k">家賃相場（平均）</span><span class="v" id="market">—<span class="u">万円</span></span></div>
     </div>
   </section>
@@ -354,6 +364,7 @@ table{border-collapse:collapse}
     <div class="card">
       <div class="row"><label for="cut">相場から下げる額<span class="sub">目安は1万円</span></label>
         <div class="inputwrap"><input type="number" id="cut" step="0.1" min="0" value="1" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <p class="unitwarn" id="warnCut"></p>
       <div class="derived hi"><span class="k">実際に設定する家賃</span><span class="v" id="rent">—<span class="u">万円</span></span></div>
     </div>
   </section>
@@ -384,6 +395,7 @@ table{border-collapse:collapse}
         <div class="inputwrap"><input type="number" id="reno" step="1" min="0" value="100" inputmode="decimal"><span class="unit">万円</span></div></div>
       <div class="row"><label for="feeRate">諸経費<span class="sub">登記・不動産取得税・仲介手数料など。物件価格に対する割合で見込みます。1割が目安</span></label>
         <div class="inputwrap"><input type="number" id="feeRate" step="0.1" min="0" value="10" inputmode="decimal"><span class="unit">％</span></div></div>
+      <p class="unitwarn" id="warnReno"></p>
       <div class="derived"><span class="k">諸経費の見込み額</span><span class="v" id="fee">—<span class="u">万円</span></span></div>
       <div class="derived hi"><span class="k">物件価格の上限</span><span class="v" id="cap">—<span class="u">万円</span></span></div>
     </div>
@@ -396,6 +408,7 @@ table{border-collapse:collapse}
     <div class="card">
       <div class="row"><label for="price">検討中の物件価格</label>
         <div class="inputwrap"><input type="number" id="price" step="1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
+      <p class="unitwarn" id="warnPrice"></p>
       <div class="verdict idle" id="verdict">
         <div class="tag" id="verdictTag">物件価格を入れてください</div>
         <p id="verdictMsg">相場と物件価格が入ると、買っていいかどうかが出ます。</p>
@@ -498,12 +511,35 @@ table{border-collapse:collapse}
     el.innerHTML = (s === null ? "—" : s) + '<span class="u">' + (unit || "万円") + "</span>";
   }
 
+  // 円単位で入力された値を万円に換算する。
+  // 家賃系は1,000万円以上、価格・リフォーム費系は1万×1万=1億円以上の
+  // 「万円としてはあり得ない値」を円入力とみなす。
+  function normalize(v, threshold) {
+    return (v !== null && v >= threshold) ? v / 10000 : v;
+  }
+  function setWarn(id, converted, examples) {
+    var el = $(id);
+    if (converted) {
+      el.className = "unitwarn on";
+      el.textContent = "この欄は「万円」単位です。円で入力されたようなので、万円に直して計算しています（" + examples + "）。";
+    } else {
+      el.className = "unitwarn";
+      el.textContent = "";
+    }
+  }
+
   function calc() {
-    var rents = ["a", "b", "c"].map(num).filter(function (v) { return v !== null && v > 0; });
+    var rawRents = ["a", "b", "c"].map(num);
+    var rents = rawRents.map(function (v) { return normalize(v, 1000); })
+      .filter(function (v) { return v !== null && v > 0; });
+    var rentConv = rawRents.some(function (v) { return v !== null && v >= 1000; });
+    setWarn("warnRent", rentConv, "例：60,000 → 6万円");
     var market = rents.length ? rents.reduce(function (s, v) { return s + v; }, 0) / rents.length : null;
     setVal("market", market);
 
     var cut = num("cut");
+    setWarn("warnCut", cut !== null && cut >= 1000, "例：10,000 → 1万円");
+    cut = normalize(cut, 1000);
     if (cut === null) cut = 0;
     var rent = market !== null ? market - cut : null;
     var cutTooBig = rent !== null && rent <= 0;
@@ -518,7 +554,9 @@ table{border-collapse:collapse}
     var total = (annual !== null && !yieldBad) ? annual / (y / 100) : null;
     setVal("total", total);
 
-    var reno = num("reno") || 0;
+    var rawReno = num("reno");
+    setWarn("warnReno", rawReno !== null && rawReno >= 10000, "例：1,000,000 → 100万円");
+    var reno = normalize(rawReno, 10000) || 0;
     var feeRate = num("feeRate");
     if (feeRate === null || feeRate < 0) feeRate = 0;
 
@@ -536,7 +574,9 @@ table{border-collapse:collapse}
   }
 
   function verdict(cap, st) {
-    var price = num("price");
+    var rawPrice = num("price");
+    setWarn("warnPrice", rawPrice !== null && rawPrice >= 10000, "例：1,500,000 → 150万円");
+    var price = normalize(rawPrice, 10000);
     var box = $("verdict"), tag = $("verdictTag"), msg = $("verdictMsg"), pill = $("stickyPill");
 
     box.className = "verdict idle";
