@@ -181,6 +181,7 @@ table{border-collapse:collapse}
     background: var(--panel-2);
   }
   .derived .k { font-size: 13px; color: var(--ink-2); }
+  .derived .k .sub { display: block; font-size: 11px; color: var(--ink-3); }
   .derived .v {
     font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums;
     letter-spacing: -.01em;
@@ -353,7 +354,7 @@ table{border-collapse:collapse}
       <div class="row"><label for="c">近い条件の物件C</label>
         <div class="inputwrap"><input type="number" id="c" step="0.1" min="0" inputmode="decimal"><span class="unit">万円</span></div></div>
       <p class="unitwarn" id="warnRent"></p>
-      <div class="derived"><span class="k">家賃相場（平均）</span><span class="v" id="market">—<span class="u">万円</span></span></div>
+      <div class="derived"><span class="k">家賃相場（平均）<span class="sub" id="marketYen"></span></span><span class="v" id="market">—<span class="u">万円</span></span></div>
     </div>
   </section>
 
@@ -365,7 +366,7 @@ table{border-collapse:collapse}
       <div class="row"><label for="cut">相場から下げる額<span class="sub">目安は1万円</span></label>
         <div class="inputwrap"><input type="number" id="cut" step="0.1" min="0" value="1" inputmode="decimal"><span class="unit">万円</span></div></div>
       <p class="unitwarn" id="warnCut"></p>
-      <div class="derived hi"><span class="k">実際に設定する家賃</span><span class="v" id="rent">—<span class="u">万円</span></span></div>
+      <div class="derived hi"><span class="k">実際に設定する家賃<span class="sub" id="rentYen"></span></span><span class="v" id="rent">—<span class="u">万円</span></span></div>
     </div>
   </section>
 
@@ -517,6 +518,12 @@ table{border-collapse:collapse}
   function normalize(v, threshold) {
     return (v !== null && v >= threshold) ? v / 10000 : v;
   }
+  function yen(man) {
+    return "月" + Math.round(man * 10000).toLocaleString("ja-JP") + "円";
+  }
+  function yenSub(id, man) {
+    $(id).textContent = man !== null && isFinite(man) ? "＝" + yen(man) : "";
+  }
   function setWarn(id, converted, examples) {
     var el = $(id);
     if (converted) {
@@ -533,9 +540,20 @@ table{border-collapse:collapse}
     var rents = rawRents.map(function (v) { return normalize(v, 1000); })
       .filter(function (v) { return v !== null && v > 0; });
     var rentConv = rawRents.some(function (v) { return v !== null && v >= 1000; });
-    setWarn("warnRent", rentConv, "例：60,000 → 6万円");
     var market = rents.length ? rents.reduce(function (s, v) { return s + v; }, 0) / rents.length : null;
     setVal("market", market);
+    yenSub("marketYen", market);
+
+    // 50(万円)のような「5万円のつもり」らしき高額家賃には注意書きを出す（換算はしない）
+    var warnEl = $("warnRent");
+    if (rentConv) {
+      setWarn("warnRent", true, "例：60,000 → 6万円");
+    } else if (market !== null && market > 30) {
+      warnEl.className = "unitwarn on";
+      warnEl.textContent = "家賃相場が月" + fmt(market) + "万円（" + Math.round(market * 10000).toLocaleString("ja-JP") + "円）になっています。この欄は「万円」単位です。家賃5万円なら「50」ではなく「5」と入力してください。";
+    } else {
+      setWarn("warnRent", false, "");
+    }
 
     var cut = num("cut");
     setWarn("warnCut", cut !== null && cut >= 1000, "例：10,000 → 1万円");
@@ -545,6 +563,7 @@ table{border-collapse:collapse}
     var cutTooBig = rent !== null && rent <= 0;
     if (cutTooBig) rent = null;
     setVal("rent", rent);
+    yenSub("rentYen", rent);
 
     var annual = rent !== null ? rent * 12 : null;
     setVal("annual", annual);
