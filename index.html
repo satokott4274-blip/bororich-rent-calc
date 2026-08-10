@@ -544,16 +544,19 @@ table{border-collapse:collapse}
     setVal("market", market);
     yenSub("marketYen", market);
 
-    // 50(万円)のような「5万円のつもり」らしき高額家賃には注意書きを出す（換算はしない）
+    // 50(万円)のような「5万円のつもり」らしき高額家賃は誤入力とみなし、
+    // 直してもらうまで以降の計算を止める（巨額の上限が出たままにしない）
+    var rentSuspicious = !rentConv && market !== null && market > 30;
     var warnEl = $("warnRent");
     if (rentConv) {
       setWarn("warnRent", true, "例：60,000 → 6万円");
-    } else if (market !== null && market > 30) {
+    } else if (rentSuspicious) {
       warnEl.className = "unitwarn on";
-      warnEl.textContent = "家賃相場が月" + fmt(market) + "万円（" + Math.round(market * 10000).toLocaleString("ja-JP") + "円）になっています。この欄は「万円」単位です。家賃5万円なら「50」ではなく「5」と入力してください。";
+      warnEl.textContent = "家賃相場が月" + fmt(market) + "万円（" + Math.round(market * 10000).toLocaleString("ja-JP") + "円）になっています。この欄は「万円」単位です。家賃5万円なら「50」ではなく「5」と入力してください。修正するまで、下の計算はお休みします。";
     } else {
       setWarn("warnRent", false, "");
     }
+    if (rentSuspicious) market = null;
 
     var cut = num("cut");
     setWarn("warnCut", cut !== null && cut >= 1000, "例：10,000 → 1万円");
@@ -588,7 +591,7 @@ table{border-collapse:collapse}
 
     verdict(cap, {
       market: market, cutTooBig: cutTooBig, yieldBad: yieldBad,
-      total: total, reno: reno, feeRate: feeRate
+      total: total, reno: reno, feeRate: feeRate, rentSuspicious: rentSuspicious
     });
   }
 
@@ -602,6 +605,12 @@ table{border-collapse:collapse}
     pill.className = "pill";
 
     if (cap === null) {
+      if (st.rentSuspicious) {
+        tag.textContent = "家賃の単位を確認してください";
+        msg.textContent = "ステップ1の家賃が大きすぎます。この欄は「万円」単位です。家賃5万円なら「5」と入力し直すと、上限額が出ます。";
+        pill.textContent = "単位を確認";
+        return;
+      }
       if (st.market === null) {
         tag.textContent = "まず家賃相場を入れてください";
         msg.textContent = "ステップ1の物件A〜Cを埋めると、上限額が出ます。";
